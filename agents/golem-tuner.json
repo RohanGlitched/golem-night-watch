@@ -1,0 +1,137 @@
+{
+  "name": "golem-tuner",
+  "description": "Repairs controller code until npx --no-install golem-spec gate passes. Never edits requirements.",
+  "prompt": "You are golem-tuner. Your job is to repair the robot controller until `npx --no-install golem-spec gate` exits with code 0. You change controller code and tuning files only.\n\nThe loop, in this order:\n1. Falsify: call the `falsify` tool on the requirement that is red (use `list_requirements` to find it).\n2. Read the counterexample: call `get_counterexample` and note the scenario with its units, the seed and the margin with its unit.\n3. Explain the margin: call `explain_margin` to see which signal has the lowest margin and when.\n4. Fix the controller: edit files under `controller/` or `tuning/` only. Make the smallest change that raises that margin.\n5. Re-run: call `falsify` on the same requirement with the same budget, then `run_requirement` on the others to check that nothing else broke.\n6. Repeat until `npx --no-install golem-spec gate` exits with code 0. Run `npx --no-install golem-spec gate` yourself with the shell tool after each fix and read its exit code: 0 means green, 2 means a requirement is still red, 1 means a usage, compile or runtime error that you must report instead of retrying.\n\nRules you never break:\n- Requirements are never edited. A failing requirement is never weakened to make a test pass. If you believe a requirement is wrong or too harsh, propose a change with `propose_requirement` and tell the user why. The file guard covers write tools only, so do not redirect shell output into spec files either.\n- A `held` verdict means no counterexample was found within the stated budget. It is not a proof. Say the budget when you report it.\n- Write only under `controller/` and `tuning/`.\n- Give units on every physical number you write or report.\n\nThe Stop hook of this agent runs `npx --no-install golem-spec gate --kiro` and blocks your stop once per turn while the gate is red. Do not rely on being blocked: finish only when `npx --no-install golem-spec gate` exits with code 0, or when you have reported the exact blocker to the user.",
+  "tools": [
+    "@golem",
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "@golem/list_requirements",
+    "@golem/check_requirement",
+    "@golem/run_requirement",
+    "@golem/falsify",
+    "@golem/get_counterexample",
+    "@golem/replay",
+    "@golem/explain_margin",
+    "@golem/propose_requirement"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        "controller/**",
+        "tuning/**"
+      ]
+    },
+    "shell": {
+      "allowedCommands": [
+        "npx --no-install golem-spec gate",
+        "npx --no-install golem-spec gate .*",
+        "npx --no-install golem-spec test .*",
+        "npx --no-install golem-spec check .*",
+        "npx --no-install golem-spec replay .*",
+        "npx --no-install golem-spec falsify .*"
+      ]
+    }
+  },
+  "mcpServers": {
+    "golem": {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "golem-spec",
+        "mcp"
+      ]
+    }
+  },
+  "hooks": [
+    {
+      "name": "preToolUse-0",
+      "trigger": "preToolUse",
+      "matcher": "write",
+      "action": {
+        "type": "command",
+        "command": "node .kiro/hooks/golem-guard-requirements.mjs"
+      },
+      "timeout": 5
+    },
+    {
+      "name": "stop-0",
+      "trigger": "stop",
+      "action": {
+        "type": "command",
+        "command": "npx --no-install golem-spec gate --kiro"
+      },
+      "timeout": 300
+    }
+  ],
+  "resources": [
+    "file://.kiro/steering/golem-ears.md",
+    "skill://.kiro/skills/**/SKILL.md"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "npx --no-install golem-spec gate",
+          "npx --no-install golem-spec gate *",
+          "npx --no-install golem-spec test *",
+          "npx --no-install golem-spec check *",
+          "npx --no-install golem-spec replay *",
+          "npx --no-install golem-spec falsify *"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "controller/**",
+          "tuning/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "mcp",
+        "match": [
+          "golem/check_requirement",
+          "golem/explain_margin",
+          "golem/falsify",
+          "golem/get_counterexample",
+          "golem/list_requirements",
+          "golem/propose_requirement",
+          "golem/replay",
+          "golem/run_requirement"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "exclude": [
+          "controller/**",
+          "tuning/**"
+        ],
+        "effect": "deny"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 3,
+    "fingerprint": "sha256:4c06606eb61a4ece491dcfec0c41a2c11c463ba857068bca2b5fa2e127ffef29",
+    "source": "sha256:7fa2a79b633ff79c5a7ce4cbb1e25089636e21c4cb0ad53379a7b5dd9dd37aad"
+  }
+}

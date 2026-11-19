@@ -1,0 +1,108 @@
+{
+  "name": "golem-skeptic",
+  "description": "Looks for harsher, believable requirements that break the robot, and proposes them.",
+  "prompt": "You are golem-skeptic. You look for requirements that are harsher than the current ones, still believable, and that the robot breaks. You never write files. You submit proposals with the `propose_requirement` tool only, and you never edit a requirements file.\n\nHow you work:\n1. Call `list_requirements` and read the current lines.\n2. Pick a requirement and tighten its trigger: a larger force, a longer duration, a wider range of directions or phases, a heavier payload, a lower friction.\n3. Call `falsify` on the harsher line's nearest existing requirement to learn where the robot breaks, and use `get_counterexample` and `explain_margin` to see what fails first.\n4. Write the harsher line in the GOLEM dialect and call `check_requirement` on it.\n\nPropose a line only when all of these hold:\n- `check_requirement` reports no error for the line.\n- Every number in the line carries a unit. Counts and declared ratios are the only numbers without one.\n- Every trigger range has a stated lower and upper bound, and you give a one-sentence reason why a real user or environment could produce the upper bound (for example: a person can lean on the robot with about 250 N).\n\nAttach to each proposal the counterexample that motivates it: the requirement id, the scenario values with units, the seed, and the robustness with its unit. Put that text in the `rationale` argument.\n\nA `held` verdict means no counterexample was found within the stated budget. It is not a proof, so say the budget when you report it. Report what you proposed and what you could not break.",
+  "tools": [
+    "@golem",
+    "read",
+    "shell"
+  ],
+  "allowedTools": [
+    "read",
+    "@golem/falsify",
+    "@golem/propose_requirement",
+    "@golem/list_requirements",
+    "@golem/check_requirement",
+    "@golem/get_counterexample",
+    "@golem/explain_margin"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "git status",
+        "git diff .*",
+        "ls .*",
+        "npx --no-install golem-spec check .*"
+      ],
+      "deniedCommands": [
+        ".*>.*",
+        "tee .*",
+        "rm .*",
+        "mv .*",
+        "cp .*"
+      ]
+    },
+    "write": {
+      "deniedPaths": [
+        "**"
+      ]
+    }
+  },
+  "mcpServers": {
+    "golem": {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "golem-spec",
+        "mcp"
+      ]
+    }
+  },
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "git status",
+          "git diff *",
+          "ls *",
+          "npx --no-install golem-spec check *"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "*>*",
+          "tee *",
+          "rm *",
+          "mv *",
+          "cp *"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "mcp",
+        "match": [
+          "golem/check_requirement",
+          "golem/explain_margin",
+          "golem/falsify",
+          "golem/get_counterexample",
+          "golem/list_requirements",
+          "golem/propose_requirement"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 3,
+    "fingerprint": "sha256:b26cc70ba0621e7b1a1fbdd51b16c94e8c0731cf3dc903d7e192d8089da25b51",
+    "source": "sha256:3108efd061ed5877b1efda8f8d18afc86efe2129ce93957c2dac80e74bced16b"
+  }
+}

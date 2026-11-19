@@ -1,0 +1,72 @@
+{
+  "name": "golem-scribe",
+  "description": "Turns plain-language robot behaviour into GOLEM EARS lines and files them as proposals.",
+  "prompt": "You are golem-scribe. You turn the user's plain-language description of robot behaviour into GOLEM EARS lines and file them as proposals. A human or Kiro spec mode merges accepted proposals into requirements.md. You never edit a requirements file.\n\nFor each behaviour the user describes:\n1. Write one line in the GOLEM dialect: WHEN, WHILE, IF/THEN, WHERE or plain THE robot SHALL, as the behaviour needs.\n2. Call `check_requirement` on the line.\n3. Revise the line until `check_requirement` reports no error Diagnostic.\n4. Write the compiled line as one entry in `.kiro/specs/<robot>/proposals.md`, in this format (a Markdown list item):\n\n- 2026-10-31T04:00:00.000Z\n  EARS: <the compiled line>\n  Rationale: <why a real user or environment could produce the trigger>\n\nThe timestamp is the current UTC time in ISO 8601.\n\nIf a line still has an error Diagnostic after 5 revisions, leave it out of the proposals file and report its text and the last Diagnostic message to the user.\n\nPut a unit on every number except counts and declared ratios. When the user's description lacks a quantity (a force, a duration, a speed), leave that quantity out of the line and ask the user for it. Never guess a value.\n\nYou may write only `.kiro/specs/*/proposals.md`. You never edit requirements.md.",
+  "tools": [
+    "@golem",
+    "read",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "@golem/check_requirement"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        ".kiro/specs/*/proposals.md"
+      ]
+    }
+  },
+  "mcpServers": {
+    "golem": {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "golem-spec",
+        "mcp"
+      ]
+    }
+  },
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_write",
+        "match": [
+          ".kiro/specs/*/proposals.md"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "mcp",
+        "match": [
+          "golem/check_requirement"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "**"
+        ],
+        "exclude": [
+          ".kiro/specs/*/proposals.md"
+        ],
+        "effect": "deny"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 3,
+    "fingerprint": "sha256:1a816c28674296d54675372fa4d72999112c4172cc933562440f4a263a188a4c",
+    "source": "sha256:00aff14d6ebf152f44ca9501de2a70bc87bbde997e6ba0ac99ae1dd3f2abf22f"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "name": "golem-night-watch",
+  "version": "0.1.0",
+  "displayName": "GOLEM Night Watch",
+  "description": "Runs the skeptic overnight and writes a summary of the proposals it made.",
+  "author": "Rohan Borade",
+  "license": "Apache-2.0",
+  "tags": [
+    "robotics",
+    "requirements",
+    "testing",
+    "ears",
+    "mujoco"
+  ],
+  "repo": "golem-night-watch",
+  "iconPath": "assets/icon.png",
+  "screenshots": [
+    "assets/screenshot-1.jpg"
+  ],
+  "highlights": [
+    "Tries nightly to break each held robot requirement with a harsher, believable line.",
+    "Writes proposals only through the propose_requirement tool: no requirements file and no controller file changes.",
+    "Ends each run with the proposal count, the broken requirement ids and the budget used.",
+    "Runs MuJoCo locally; makes no network request."
+  ],
+  "agents": [
+    "agents/golem-tuner.json",
+    "agents/golem-skeptic.json",
+    "agents/golem-scribe.json"
+  ],
+  "skills": [
+    "skills/robot-ears",
+    "skills/falsify-and-fix"
+  ],
+  "mcpServers": {
+    "golem": {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "golem-spec",
+        "mcp"
+      ]
+    }
+  },
+  "crons": [
+    {
+      "name": "night-watch",
+      "cron_expr": "0 3 * * *",
+      "agent": "golem-skeptic",
+      "message": "Run once. Use the golem-skeptic agent: call list_requirements, then falsify on the requirements that held at their last run with a budget of 64 trials, and propose a harsher believable line for each requirement you can break. Submit proposals only with propose_requirement; never create, modify or delete a requirements file or a file under controller/. End your final reply with a summary that lists: the number of proposals written and their requirement ids; the ids of the requirements whose latest verdict is broken; and the budget used as the number of trials run and the wall time in seconds. If the run fails before it completes, end your final reply with a summary that states the failure and the number of proposals written before it, and leave every requirements file and controller file unchanged."
+    }
+  ],
+  "permissions": {
+    "network": false
+  }
+}
